@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glosariusz — typy i enumy</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+  <div class="prose">
+    <nav class="breadcrumbs" aria-label="Ścieżka">
+      <a href="../index.html">TypeScript w zespole</a>
+      <span class="breadcrumbs__sep">/</span>
+      <span>Glosariusz</span>
+    </nav>
+
+    <header>
+      <h1>Glosariusz</h1>
+      <p class="lead">Krótkie definicje używane w lekcji 0001.</p>
+    </header>
+
+    <dl class="glossary">
+      <dt>literal type</dt>
+      <dd>
+        <p>Typ, który dopuszcza dokładnie jedną wartość, na przykład <code>'todo'</code> albo <code>42</code>.</p>
+        <div class="code">
+<pre><code>type Status = 'todo' | 'done';
+const s: 'todo' = 'todo';</code></pre>
+        </div>
+      </dd>
+
+      <dt>union (unia)</dt>
+      <dd>
+        <p>Typ będący sumą kilku innych typów. Zmienna może być jednym z nich.</p>
+        <div class="code">
+<pre><code>type Status = 'todo' | 'in_progress' | 'done';
+let s: Status = 'todo';</code></pre>
+        </div>
+      </dd>
+
+      <dt>enum</dt>
+      <dd>
+        <p>Konstrukcja TypeScript, która tworzy zarówno typ, jak i obiekt runtime. Typ enumu to unia jego członków.</p>
+        <div class="code">
+<pre><code>enum TaskStatus { Todo = 'todo', Done = 'done' }
+const x: TaskStatus = TaskStatus.Todo;</code></pre>
+        </div>
+      </dd>
+
+      <dt>reverse mapping</dt>
+      <dd>
+        <p>W enumie liczbowym możesz pobrać nazwę klucza po wartości: <code>NumEnum[0]</code> daje <code>'Low'</code>. Dla enumów stringowych odwrotnego mapowania nie ma.</p>
+        <div class="code">
+<pre><code>enum NumEnum { Low = 0 }
+console.log(NumEnum[0]); // 'Low'</code></pre>
+        </div>
+      </dd>
+
+      <dt>narrowing (zawężanie)</dt>
+      <dd>
+        <p>Proces, w którym TypeScript zmniejsza typ zmiennej na podstawie warunków lub sprawdzeń w kodzie.</p>
+        <div class="code">
+<pre><code>function check(x: string | number) {
+  if (typeof x === 'string') {
+    x.toUpperCase(); // tu x jest stringiem
+  }
+}</code></pre>
+        </div>
+      </dd>
+
+      <dt><code>as const</code></dt>
+      <dd>
+        <p>Operator, który zamraża typ obiektu lub tablicy na najwęższe readonly literały.</p>
+        <div class="code">
+<pre><code>const TaskStatus = {
+  Todo: 'todo',
+  Done: 'done',
+} as const;
+
+type T = (typeof TaskStatus)['Todo']; // 'todo'</code></pre>
+        </div>
+      </dd>
+
+      <dt><code>satisfies</code></dt>
+      <dd>
+        <p>Operator, który sprawdza, czy wartość pasuje do typu, ale nie zmienia jej własnego typu. Zachowuje inferencję.</p>
+        <div class="code">
+<pre><code>const config = {
+  port: 3000,
+} satisfies { port: number };</code></pre>
+        </div>
+      </dd>
+
+      <dt><code>never</code></dt>
+      <dd>
+        <p>Typ, który nie dopuszcza żadnej wartości. Używa się go do sygnalizowania niemożliwej ścieżki lub pustej unii.</p>
+        <div class="code">
+<pre><code>function fail(): never {
+  throw new Error('niepowodzenie');
+}</code></pre>
+        </div>
+      </dd>
+
+      <dt>typ nominalny vs strukturalny</dt>
+      <dd>
+        <p>Typ strukturalny pasuje, gdy kształt jest taki sam. Typ nominalny pasuje tylko wtedy, gdy ma tę samą nazwę. Enum stringowy zachowuje się nominalnie.</p>
+        <div class="code">
+<pre><code>enum A { X = 'x' }
+enum B { X = 'x' }
+
+const a: A = A.X; // OK
+// @ts-expect-error — enumy o różnych nazwach to różne typy.
+const b: B = A.X; // błąd</code></pre>
+        </div>
+      </dd>
+    </dl>
+
+    <div class="next-links">
+      <a href="../lessons/0001-enum-czy-unia-literalow.html">Lekcja 0001</a>
+      <a href="../reference/cheatsheet-typy-i-enumy.html">Ściąga</a>
+    </div>
+
+    <footer class="page-footer">
+      <p>Źródła: <a href="https://www.typescriptlang.org/docs/handbook/enums.html">Handbook → Enums</a>,
+      <a href="https://www.typescriptlang.org/docs/handbook/2/everyday-types.html">Everyday Types</a>,
+      <a href="https://www.typescriptlang.org/docs/handbook/2/narrowing.html">Narrowing</a>.</p>
+    </footer>
+  </div>
+</body>
+</html>

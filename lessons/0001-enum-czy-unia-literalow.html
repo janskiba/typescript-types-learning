@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lekcja 0001 — Enum czy unia literałów?</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+  <script src="../assets/quiz.js" defer></script>
+</head>
+<body>
+  <div class="prose">
+    <nav class="breadcrumbs" aria-label="Ścieżka">
+      <a href="../index.html">TypeScript w zespole</a>
+      <span class="breadcrumbs__sep">/</span>
+      <span>Lekcja 0001</span>
+    </nav>
+
+    <header>
+      <p class="lead">Lekcja 0001</p>
+      <h1>Enum czy unia literałów?</h1>
+    </header>
+
+    <section id="sec01">
+      <h2><span class="section-num">1.</span> Hook — prawdziwy diff z review</h2>
+      <p>Patrzysz na PR. Ktoś dodaje statusy zadań:</p>
+
+      <div class="code">
+<pre><code>// PR: "dodaje statusy zadań"
+enum TaskStatus {
+  Todo = 'todo',
+  InProgress = 'in_progress',
+  Done = 'done',
+}</code></pre>
+      </div>
+
+      <p>Zatrzymaj się nad dwoma pytaniami, zanim przeczytasz dalej:</p>
+      <ul>
+        <li>Co tu jest właściwie: typ, wartość, czy oba?</li>
+        <li>Co się stanie, jak ktoś napisze <code>const s: TaskStatus = 'todo';</code>?</li>
+      </ul>
+      <p>Odpowiedzi znajdziesz w sekcjach 3 i 4.</p>
+    </section>
+
+    <section id="sec02">
+      <h2><span class="section-num">2.</span> Dwa światy TypeScriptu</h2>
+      <p>TypeScript działa w dwóch światach. Typy znikają po kompilacji. Wartości zostają w runtime.<a class="cite" href="https://www.typescriptlang.org/docs/handbook/2/everyday-types.html">[8]</a></p>
+
+      <div class="code">
+<pre><code>type TaskStatusUnion = 'todo' | 'done';
+
+// Typy znikają po kompilacji — w runtime nie ma ich wcale.
+console.log(typeof (undefined as unknown as TaskStatusUnion)); // undefined</code></pre>
+      </div>
+
+      <p>Enum jest rzadkim przypadkiem: jest jednocześnie typem i wartością.</p>
+
+      <div class="code">
+<pre><code>enum TaskStatus {
+  Todo = 'todo',
+  InProgress = 'in_progress',
+  Done = 'done',
+}
+
+// Enum istnieje w runtime jako zwykły obiekt.
+console.log(typeof TaskStatus); // object
+console.log(TaskStatus);
+// { Todo: 'todo', InProgress: 'in_progress', Done: 'done' }</code></pre>
+      </div>
+    </section>
+
+    <section id="sec03">
+      <h2><span class="section-num">3.</span> Co enum naprawdę jest</h2>
+      <p>Typ <code>TaskStatus</code> to unia <strong>własnych</strong> członków enumu:</p>
+      <p><code>TaskStatus.Todo | TaskStatus.InProgress | TaskStatus.Done</code></p>
+      <p>To <strong>nie jest</strong> unia surowych stringów, takich jak <code>'todo' | 'done'</code>.<a class="cite" href="https://www.typescriptlang.org/docs/handbook/enums.html#union-enums-and-enum-member-types">[1]</a><a class="cite" href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-0.html#all-enums-are-union-enums">[7]</a></p>
+      <p>Wartość enumu to natomiast zwykły obiekt runtime:</p>
+      <p><code>{ Todo: 'todo', InProgress: 'in_progress', Done: 'done' }</code></p>
+    </section>
+
+    <section id="sec04">
+      <h2><span class="section-num">4.</span> Kluczowa różnica</h2>
+      <p>To jest serce lekcji. Sprawdź to sam w edytorze:</p>
+
+      <div class="code">
+<pre><code>enum TaskStatus { Todo = 'todo', Done = 'done' }
+type TaskStatusUnion = 'todo' | 'done';
+
+const a: TaskStatusUnion = TaskStatus.Todo; // ✅ OK
+// @ts-expect-error TS2322 — surowy string nie pasuje do typu enumu.
+const b: TaskStatus = 'todo';               // ❌ błąd
+const c: TaskStatusUnion = 'todo';          // ✅ OK</code></pre>
+      </div>
+
+      <div class="callout callout--key">
+        <div class="callout__title">Wniosek</div>
+        <p>Enum tworzy typ nominalny. Do zmiennej typu enum musisz włożyć element enumu. Unia literałów jest typem strukturalnym — przyjmuje surowy string.<a class="cite" href="https://www.typescriptlang.org/docs/handbook/enums.html">[2]</a></p>
+      </div>
+
+      <p>W praktyce enum = kontrola „wejścia” (nikt nie wrzuci przypadkowego stringa). Unia = wygodna współpraca z danymi z API i JSON.</p>
+
+      <div class="code">
+<pre><code>enum TaskStatus {
+  Todo = 'todo',
+  InProgress = 'in_progress',
+  Done = 'done',
+}
+
+// Dane z API przychodzą jako string. To `as` kłamie kompilatorowi.
+const fromApi = JSON.parse('{"status":"todo"}') as { status: TaskStatus };</code></pre>
+      </div>
+
+      <p>To działa, ale jest niebezpieczne. Lepiej użyć unii i sprawdzić wartość w runtime.</p>
+    </section>
+
+    <section id="sec05">
+      <h2><span class="section-num">5.</span> Trzy sposoby na ten sam zestaw wartości</h2>
+
+      <p>a) Tylko unia:</p>
+      <div class="code">
+<pre><code>type TaskStatus = 'todo' | 'in_progress' | 'done';</code></pre>
+      </div>
+
+      <p>b) Enum:</p>
+      <div class="code">
+<pre><code>enum TaskStatus {
+  Todo = 'todo',
+  InProgress = 'in_progress',
+  Done = 'done',
+}</code></pre>
+      </div>
+
+      <p>c) Obiekt <code>as const</code> z typem wyliczonym:</p>
+      <div class="code">
+<pre><code>const TaskStatus = {
+  Todo: 'todo',
+  InProgress: 'in_progress',
+  Done: 'done',
+} as const;
+
+type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus];</code></pre>
+      </div>
+
+      <div class="table">
+        <table>
+          <thead>
+            <tr>
+              <th>Kryterium</th>
+              <th>Unia</th>
+              <th>Enum stringowy</th>
+              <th><code>as const</code></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Wartość w runtime?</td>
+              <td>nie ma</td>
+              <td>obiekt</td>
+              <td>obiekt</td>
+            </tr>
+            <tr>
+              <td>Surowy string przechodzi?</td>
+              <td>tak</td>
+              <td>nie</td>
+              <td>tak</td>
+            </tr>
+            <tr>
+              <td>Ile linii kodu</td>
+              <td>1</td>
+              <td>4</td>
+              <td>2 + typ</td>
+            </tr>
+            <tr>
+              <td><code>Object.values</code> / iteracja</td>
+              <td>nie</td>
+              <td>tak</td>
+              <td>tak</td>
+            </tr>
+            <tr>
+              <td>Ryzyko</td>
+              <td>niskie</td>
+              <td>const enum, reverse mapping</td>
+              <td>literówka w kluczu</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="sec06">
+      <h2><span class="section-num">6.</span> Reguły decyzyjne</h2>
+      <div class="table">
+        <table>
+          <thead>
+            <tr>
+              <th>Sytuacja</th>
+              <th>Wybór</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Tylko typ, status nigdy nie jest wartością</td>
+              <td>unia literałów</td>
+            </tr>
+            <tr>
+              <td>Potrzebuję obiektu w runtime (iteracja, mapowanie na labelki, <code>Object.values</code>)</td>
+              <td>enum stringowy albo obiekt <code>as const</code></td>
+            </tr>
+            <tr>
+              <td>Zestaw zamknięty i znany</td>
+              <td>unia lub enum</td>
+            </tr>
+            <tr>
+              <td>Zestaw przyjdzie z zewnątrz (API)</td>
+              <td>unia + walidacja w runtime</td>
+            </tr>
+            <tr>
+              <td>Wartość trafi do bazy / JSON</td>
+              <td>string enum — zmiana wartości to breaking change</td>
+            </tr>
+            <tr>
+              <td>Zwykłe flagi / stany bitowe</td>
+              <td>enum liczbowy, świadomie</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="sec07">
+      <h2><span class="section-num">7.</span> Pułapki</h2>
+
+      <div class="callout callout--warn">
+        <div class="callout__title">1. Reverse mapping działa tylko dla liczb.</div>
+        <div class="code">
+<pre><code>enum NumEnum { Low = 0, High = 1 }
+enum StrEnum { Todo = 'todo' }
+
+// Reverse mapping działa tylko dla enumów liczbowych.
+console.log(NumEnum[0]);      // 'Low'
+console.log(NumEnum['Low']);  // 0
+// @ts-expect-error — string enum nie ma właściwości 'todo'.
+console.log(StrEnum['todo']); // undefined (brak reverse mappingu)</code></pre>
+        </div>
+        <p>Dla enumu stringowego odwrotnego mapowania nie ma.<a class="cite" href="https://www.typescriptlang.org/docs/handbook/enums.html#reverse-mappings">[3]</a></p>
+      </div>
+
+      <div class="callout callout--warn">
+        <div class="callout__title">2. Enum liczbowy przyjmuje surową liczbę.</div>
+        <div class="code">
+<pre><code>enum NumEnum { Low = 0, High = 1 }
+
+// Surowa liczba pasuje do enumu liczbowego.
+const d: NumEnum = 0; // ✅ OK, ale tracisz ochronę typu.</code></pre>
+        </div>
+        <p>Każda liczba typu <code>number</code> wejdzie. Do tego numery zmieniają się, gdy ktoś wstawi element w środek enumu.</p>
+      </div>
+
+      <div class="callout callout--warn">
+        <div class="callout__title">3. <code>const enum</code> może wybuchnąć w buildzie.</div>
+        <div class="code">
+<pre><code>// const enum znika w trakcie kompilacji.
+const enum Size { Small = 1, Large = 2 }
+
+// Nie przejdzie z `--erasableSyntaxOnly`.
+// Przy `isolatedModules` też może się zepsuć, bo transpile-only
+// (np. Babel, SWC, esbuild) nie wstawi wartości w miejsce użycia.</code></pre>
+        </div>
+        <p>TypeScript Handbook pisze, że <code>const enum</code> jest niezgodny z <code>isolatedModules</code>, a narzędzia transpile-only nie potrafią go zinline'ować. Praktyka: nie używaj <code>const enum</code>.<a class="cite" href="https://www.typescriptlang.org/docs/handbook/enums.html#const-enums">[4]</a><a class="cite" href="https://www.typescriptlang.org/docs/handbook/enums.html#const-enum-pitfalls">[5]</a><a class="cite" href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-8.html#the---erasablesyntaxonly-option">[6]</a></p>
+      </div>
+
+      <div class="callout callout--warn">
+        <div class="callout__title">4. <code>typeof Enum</code> to typ obiektu, nie typ statusu.</div>
+        <div class="code">
+<pre><code>enum TaskStatus { Todo = 'todo', Done = 'done' }
+
+// `typeof TaskStatus` to typ obiektu, nie typ statusu.
+const x: typeof TaskStatus = TaskStatus; // ✅ OK
+// @ts-expect-error TS2741 — typ obiektu to nie unia członków.
+const y: TaskStatus = TaskStatus;        // ❌ błąd</code></pre>
+        </div>
+        <p>Sam enum (bez <code>typeof</code>) to typ unii członków. <code>typeof Enum</code> to typ obiektu runtime.</p>
+      </div>
+
+      <div class="callout callout--warn">
+        <div class="callout__title">5. String enum to wartość, która trafia do bazy i JSON.</div>
+        <div class="code">
+<pre><code>enum TaskStatus { Todo = 'todo' }
+
+// Zmiana wartości stringowej to breaking change w bazie / JSON.
+// `Todo = 'TODO'` zmieni zapisane dane, a nie tylko nazwę w kodzie.</code></pre>
+        </div>
+        <p>Dlatego wartości enumu traktuj jak publiczne API.</p>
+      </div>
+    </section>
+
+    <section id="sec08">
+      <h2><span class="section-num">8.</span> Quiz</h2>
+      <p>Kliknij odpowiedź, żeby zobaczyć wyjaśnienie.</p>
+
+      <script id="quiz-data" type="application/json">
+[
+  {
+    "q": "Co istnieje w runtime dla `type Status = 'todo' | 'done'`?",
+    "options": ["nic konkretnego", "zwykły obiekt", "enum TS"],
+    "correct": 0,
+    "why": "Unia to tylko typ. Po kompilacji znika i nie zostaje żaden obiekt."
+  },
+  {
+    "q": "`const s: Status = 'todo'` gdzie `Status` to enum stringowy — co się stanie?",
+    "options": ["zgłosi błąd kompilacji", "przyjmie surowy string", "działa tylko liczbowo"],
+    "correct": 0,
+    "why": "Enum stringowy tworzy typ nominalny. Surowy string nie pasuje do typu enumu."
+  },
+  {
+    "q": "Odwrócone mapowanie działa dla:",
+    "options": ["tylko liczbowe enumy", "tylko stringowe enumy", "oba rodzaje enumów"],
+    "correct": 0,
+    "why": "Reverse mapping istnieje tylko dla enumów liczbowych. Dla stringowych go nie ma."
+  },
+  {
+    "q": "`--erasableSyntaxOnly` blokuje:",
+    "options": ["każdy enum TS", "tylko const enum", "tylko liczbowy enum"],
+    "correct": 0,
+    "why": "Opcja `--erasableSyntaxOnly` odrzuca składnię enumu — zarówno zwykłego, jak i const enum."
+  },
+  {
+    "q": "`as const` robi głównie:",
+    "options": ["dodaje tylko readonly", "tworzy obiekt runtime", "nic nie zmienia"],
+    "correct": 0,
+    "why": "`as const` zamraża typ na readonly — najwęższe literały bez możliwości zmiany."
+  },
+  {
+    "q": "Co najlepiej wybrać, gdy wartość trafi do bazy / JSON?",
+    "options": ["enum z wartościami string", "enum z wartościami liczb", "unia z surowych literałów"],
+    "correct": 0,
+    "why": "String enum daje jawną, czytelną wartość w bazie. Pamiętaj: zmiana wartości to breaking change."
+  }
+]
+      </script>
+
+      <div class="quiz" data-quiz-source="quiz-data" data-quiz-title="Sprawdź się"></div>
+    </section>
+
+    <section id="sec09">
+      <h2><span class="section-num">9.</span> Micro-ćwiczenie „review"</h2>
+      <p>Wybierz rekomendowany typ do każdego fragmentu z PR-a. Pod opcją znajdziesz tekst, który możesz wkleić do komentarza w review.</p>
+
+      <script id="review-data" type="application/json">
+[
+  {
+    "code": "declare function fetchStatus(): string;\nconst raw = fetchStatus(); // 'todo' | 'in_progress' | 'done'\nlet status: string = raw; // jaki typ tu pasuje?",
+    "q": "Status przychodzi z zewnętrznego API jako string. Co zaproponujesz?",
+    "options": ["enum stringowy", "unia + walidacja", "enum liczbowy"],
+    "correct": 1,
+    "why": "Z zewnętrznego API przychodzi surowy string. Unia przyjmuje go bez rzutowania, ale warto sprawdzić wartość w runtime.",
+    "review": "Dajmy tu unię literałów i funkcję walidującą — unikniemy kłamliwego `as` i błędów w runtime."
+  },
+  {
+    "code": "const LABELS = {\n  todo: 'Do zrobienia',\n  in_progress: 'W trakcie',\n  done: 'Gotowe',\n};",
+    "q": "Mapujemy statusy na labelki do wyświetlenia w UI. Co pasuje najlepiej?",
+    "options": ["as const obiekt", "sam enum", "unia literałów"],
+    "correct": 0,
+    "why": "Potrzebujemy obiektu w runtime. `as const` daje readonly obiekt bez problemów enumu.",
+    "review": "Użyłbym tu `as const` — mamy obiekt w runtime, a unikamy pułapek const enum i reverse mapping."
+  },
+  {
+    "code": "enum Flags {\n  Read = 1 << 0,\n  Write = 1 << 1,\n  Execute = 1 << 2,\n}",
+    "q": "Wewnętrzne flagi bitowe w module. Co powiesz w review?",
+    "options": ["flagi bitowe OK", "lepiej unia string", "lepiej as const"],
+    "correct": 0,
+    "why": "Flagi bitowe to klasyczne zastosowanie enumu liczbowego, o ile zespół rozumie ryzyko.",
+    "review": "Enum liczbowy tu pasuje, ale pilnujmy, żeby nikt nie wstawiał elementu w środek — zmieniłby wartości."
+  }
+]
+      </script>
+
+      <div class="quiz" data-quiz-source="review-data" data-quiz-title="Ćwiczenie review"></div>
+    </section>
+
+    <section id="sec10">
+      <h2><span class="section-num">10.</span> Ściąga i zamknięcie</h2>
+
+      <div class="callout callout--note">
+        <div class="callout__title">Ściąga do wydruku</div>
+        <p>Zachowaj pod ręką: <a href="../reference/cheatsheet-typy-i-enumy.html">ściąga: typy i enumy</a>.</p>
+      </div>
+
+      <h3>Co zapamiętać</h3>
+      <ul class="keypoints">
+        <li>Enum to typ nominalny — do zmiennej typu enum wkładasz element enumu, a nie surowy string.</li>
+        <li>Unia literałów to tylko typ; znika po kompilacji i dobrze współpracuje z danymi z API.</li>
+        <li>Unikaj <code>const enum</code> — może się zepsuć przy <code>isolatedModules</code> i <code>--erasableSyntaxOnly</code>.</li>
+      </ul>
+
+      <h3>Źródła</h3>
+      <ol>
+        <li><a href="https://www.typescriptlang.org/docs/handbook/enums.html#union-enums-and-enum-member-types">TypeScript Handbook — Union enums and enum member types</a></li>
+        <li><a href="https://www.typescriptlang.org/docs/handbook/enums.html">TypeScript Handbook — Enums</a></li>
+        <li><a href="https://www.typescriptlang.org/docs/handbook/enums.html#reverse-mappings">TypeScript Handbook — Reverse mappings</a></li>
+        <li><a href="https://www.typescriptlang.org/docs/handbook/enums.html#const-enums">TypeScript Handbook — Constant Enums</a></li>
+        <li><a href="https://www.typescriptlang.org/docs/handbook/enums.html#const-enum-pitfalls">TypeScript Handbook — Const enum pitfalls</a></li>
+        <li><a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-8.html#the---erasablesyntaxonly-option">TypeScript 5.8 — <code>--erasableSyntaxOnly</code></a></li>
+        <li><a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-0.html#all-enums-are-union-enums">TypeScript 5.0 — All enums are union enums</a></li>
+        <li><a href="https://www.typescriptlang.org/docs/handbook/2/everyday-types.html">TypeScript Handbook — Everyday Types</a></li>
+        <li><a href="https://www.typescriptlang.org/docs/handbook/2/narrowing.html">TypeScript Handbook — Narrowing</a></li>
+        <li><a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator">TypeScript 4.9 — The <code>satisfies</code> operator</a></li>
+      </ol>
+
+      <p><strong>Masz pytanie?</strong> Zapytaj swojego agenta — odpowiem na każde pytanie.</p>
+
+      <div class="next-links">
+        <a href="../reference/cheatsheet-typy-i-enumy.html">Ściąga: typy i enumy</a>
+        <a href="../reference/glossary.html">Glosariusz</a>
+        <span>Następna lekcja: <code>as const</code> vs <code>satisfies</code> vs <code>as</code> + zawężanie typów</span>
+      </div>
+    </section>
+
+    <footer class="page-footer">
+      <p><strong>Spis treści lekcji</strong></p>
+      <ul class="page-footer__toc">
+        <li><a href="#sec01">1. Hook</a></li>
+        <li><a href="#sec02">2. Dwa światy</a></li>
+        <li><a href="#sec03">3. Co enum jest</a></li>
+        <li><a href="#sec04">4. Kluczowa różnica</a></li>
+        <li><a href="#sec05">5. Trzy sposoby</a></li>
+        <li><a href="#sec06">6. Reguły</a></li>
+        <li><a href="#sec07">7. Pułapki</a></li>
+        <li><a href="#sec08">8. Quiz</a></li>
+        <li><a href="#sec09">9. Review</a></li>
+        <li><a href="#sec10">10. Ściąga</a></li>
+      </ul>
+    </footer>
+  </div>
+</body>
+</html>

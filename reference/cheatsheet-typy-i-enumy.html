@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ściąga: typy i enumy w TypeScript</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body class="cheat-sheet">
+  <div class="sheet">
+    <header class="sheet__header">
+      <nav class="breadcrumbs" aria-label="Ścieżka">
+        <a href="../index.html">TypeScript w zespole</a>
+        <span class="breadcrumbs__sep">/</span>
+        <span>Ściąga</span>
+      </nav>
+      <h1>Ściąga: typy i enumy</h1>
+      <p class="lead">Jeden arkusz A4 do code review.</p>
+    </header>
+
+    <main class="sheet__body">
+      <section class="sheet__section">
+        <h2>Enum vs unia vs <code>as const</code></h2>
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>Kryterium</th>
+                <th>Unia literałów</th>
+                <th>Enum stringowy</th>
+                <th><code>as const</code> + typ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>W runtime</td>
+                <td>nic</td>
+                <td>obiekt</td>
+                <td>obiekt</td>
+              </tr>
+              <tr>
+                <td>Surowy string</td>
+                <td>✓ pasuje</td>
+                <td>✗ błąd</td>
+                <td>✓ pasuje</td>
+              </tr>
+              <tr>
+                <td>Iteracja / <code>Object.values</code></td>
+                <td>✗</td>
+                <td>✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Reverse mapping</td>
+                <td>—</td>
+                <td>✗</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td>Ryzyko w buildzie</td>
+                <td>brak</td>
+                <td>const enum, erasableSyntaxOnly</td>
+                <td>literówka w kluczu</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sheet__section">
+        <h2>Operatory: <code>as const</code> vs <code>satisfies</code> vs <code>as</code></h2>
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>Operator</th>
+                <th>Co robi</th>
+                <th>Kiedy użyć</th>
+                <th>Ryzyko</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>as const</code></td>
+                <td>Zamraża typ na readonly literały</td>
+                <td>Chcesz najwęższego typu obiektu</td>
+                <td>Niskie</td>
+              </tr>
+              <tr>
+                <td><code>satisfies</code></td>
+                <td>Sprawdza zgodność bez zmiany typu</td>
+                <td>Walidacja bez utraty inferencji</td>
+                <td>Niskie</td>
+              </tr>
+              <tr>
+                <td><code>as</code></td>
+                <td>Rzutuje na inny typ</td>
+                <td>Tylko gdy naprawdę wiesz lepiej</td>
+                <td>Wysokie — można okłamać TS</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sheet__section">
+        <h2>Lista pułapek enumu</h2>
+        <ul class="checklist">
+          <li>Reverse mapping działa tylko dla enumów liczbowych.</li>
+          <li>Enum liczbowy przyjmuje każdą liczbę — tracisz ochronę typu.</li>
+          <li>Enum stringowy nie przyjmuje surowego stringa.</li>
+          <li><code>const enum</code> może zawieść przy <code>isolatedModules</code> i <code>--erasableSyntaxOnly</code>.</li>
+          <li><code>typeof Enum</code> to typ obiektu, nie unia członków.</li>
+          <li>Zmiana wartości string enumu to breaking change w bazie / JSON.</li>
+        </ul>
+      </section>
+
+      <section class="sheet__section">
+        <h2>API enumu — skrót</h2>
+        <div class="code">
+<pre><code>enum TaskStatus {
+  Todo = 'todo',
+  Done = 'done',
+}
+
+// typ unii członków
+type Member = TaskStatus; // TaskStatus.Todo | TaskStatus.Done
+
+// typ obiektu runtime
+type ObjectType = typeof TaskStatus;
+
+// wartości do iteracji
+const values = Object.values(TaskStatus); // ['todo', 'done']</code></pre>
+        </div>
+      </section>
+    </main>
+
+    <footer class="sheet__footer">
+      <p>Źródła: <a href="https://www.typescriptlang.org/docs/handbook/enums.html">Handbook → Enums</a>,
+      <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-8.html#the---erasablesyntaxonly-option">TS 5.8 erasableSyntaxOnly</a>,
+      <a href="https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator">TS 4.9 satisfies</a>.</p>
+    </footer>
+  </div>
+</body>
+</html>
